@@ -23,7 +23,7 @@ GROUP_ORDER = ["rest", "tiktok", "youtube", "twitter"]
 
 
 def main():
-    default_path = Path("data/raw/acc.csv")
+    default_path = Path("data/raw/data/acc.csv")
     csv_path = Path(sys.argv[1]) if len(sys.argv) > 1 else default_path
 
     if not csv_path.exists():
@@ -71,7 +71,14 @@ def main():
         change_mean=("change", "mean"),
         change_sd=("change", "std"),
     ).reindex(GROUP_ORDER)
-    print((desc * 100).round(2).to_string())
+    print(
+    desc.assign(
+        pre_mean=desc["pre_mean"] * 100,
+        post_mean=desc["post_mean"] * 100,
+        change_mean=desc["change_mean"] * 100,
+        change_sd=desc["change_sd"] * 100
+    ).round(2).to_string()
+)
 
     groups = {
         g: paired.loc[paired["interrupt"].eq(g), "change"].dropna().to_numpy()
