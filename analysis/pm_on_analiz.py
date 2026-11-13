@@ -17,6 +17,7 @@ import itertools
 import pandas as pd
 from scipy import stats
 from statsmodels.stats.multitest import multipletests
+import matplotlib.pyplot as plt
 
 
 GROUP_ORDER = ["rest", "tiktok", "youtube", "twitter"]
@@ -79,6 +80,56 @@ def main():
         change_sd=desc["change_sd"] * 100
     ).round(2).to_string()
 )
+    
+    # Grafiklerin kaydedileceği klasör
+    grafik_klasoru = Path("analysis/grafikler")
+    grafik_klasoru.mkdir(parents=True, exist_ok=True)
+
+    # 1. Ön test - Son test grafiği
+    grafik_verisi = desc[["pre_mean", "post_mean"]].reindex(GROUP_ORDER) * 100
+
+    ax = grafik_verisi.plot(
+        kind="bar",
+        figsize=(10, 6),
+        width=0.7
+    )
+
+    ax.set_title("Gruplara Göre PM Ön Test ve Son Test Performansı")
+    ax.set_xlabel("Deney Koşulları")
+    ax.set_ylabel("PM Performansı (%)")
+    ax.set_xticklabels(["Rest", "TikTok", "YouTube", "Twitter"], rotation=0)
+    ax.legend(["Ön Test", "Son Test"])
+    ax.set_ylim(0, 100)
+
+    plt.tight_layout()
+    plt.savefig(grafik_klasoru / "pm_pre_post.png", dpi=300)
+    plt.close()
+
+    # 2. PM değişim grafiği
+    fig, ax = plt.subplots(figsize=(10, 6))
+
+    degisim_verileri = [
+        paired.loc[paired["interrupt"] == grup, "change"].dropna() * 100
+        for grup in GROUP_ORDER
+    ]
+
+    ax.boxplot(
+    degisim_verileri,
+    tick_labels=["Rest", "TikTok", "YouTube", "Twitter"],
+    showmeans=True
+    )
+
+    ax.axhline(0, linestyle="--", linewidth=1)
+    ax.set_title("Gruplara Göre PM Performansındaki Değişim")
+    ax.set_xlabel("Deney Koşulları")
+    ax.set_ylabel("Performans Değişimi (Yüzde Puan)")
+
+    plt.tight_layout()
+    plt.savefig(grafik_klasoru / "pm_degisim.png", dpi=300)
+    plt.close()
+
+    print("\nGrafikler analysis/grafikler klasörüne kaydedildi.")
+
 
     groups = {
         g: paired.loc[paired["interrupt"].eq(g), "change"].dropna().to_numpy()
